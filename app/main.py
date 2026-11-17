@@ -11,6 +11,7 @@ from app.api.v1.auth.router import router as auth_router
 from app.api.v1.uploads.router import router as upload_router
 from app.api.v1.tags.router import router as tag_router
 from app.api.v1.users.router import router as user_router
+from app.api.v1.categories.router import router as category_router
 from fastapi.staticfiles import StaticFiles
 
 MEDIA_DIR = "app/media"
@@ -24,6 +25,7 @@ def create_app() -> FastAPI:
     app.include_router(post_router, prefix="/api/v1")
     app.include_router(tag_router, prefix="/api/v1")
     app.include_router(user_router, prefix="/api/v1")
+    app.include_router(category_router, prefix="/api/v1")
     app.include_router(upload_router, prefix="/api/v1")
 
     os.makedirs(MEDIA_DIR, exist_ok=True)  # Ensure media directory exists

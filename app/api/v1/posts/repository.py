@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session, selectinload, joinedload
-from app.models import PostORM, TagORM, User
+from app.models import PostORM, TagORM, User, CategoryORM
 from app.services.pagination import paginate_query
 from app.api.v1.tags.repository import TagRepository
 
@@ -14,11 +14,16 @@ class PostRepository:
         post_find = select(PostORM).where(PostORM.id == post_id)
         return self.db.execute(post_find).scalar_one_or_none()
 
-    def search(self, query: Optional[str], order_by: str, direction: str, page: int, per_page: int) -> dict:
+    def search(self, query: Optional[str], order_by: str, direction: str, page: int, per_page: int,
+               category_slug: Optional[str] = None) -> dict:
         results = select(PostORM)
 
         if query:
             results = results.where(PostORM.title.ilike(f"%{query}%"))
+
+        if category_slug:
+            results = results.join(CategoryORM).where(
+                CategoryORM.slug == category_slug)
 
         # Módulo 9: usamos la paginación global en lugar de repetir la lógica
         return paginate_query(
@@ -51,10 +56,11 @@ class PostRepository:
         # Delegamos en el repositorio aislado de Tags (normaliza con strip().lower())
         return TagRepository(self.db).ensure_tag(name)
 
-    def create_post(self, title: str, content: str, author: Optional[User], tags: List[dict], image_url: Optional[str]) -> PostORM:
+    def create_post(self, title: str, content: str, author: Optional[User], tags: List[dict],
+                    image_url: Optional[str], category_id: Optional[int] = None) -> PostORM:
         # Módulo 10: el autor es el usuario autenticado (ya existe en la tabla users)
         post = PostORM(title=title, content=content, image_url=image_url,
-                       user=author)
+                       user=author, category_id=category_id)
         # Fix Módulo 9: por si llega "a, b" pegado, lo partimos y normalizamos
         names: List[str] = []
         for tag in tags:

@@ -2,6 +2,7 @@ from typing import Optional, List, Union, Literal, Annotated
 from pydantic import BaseModel, Field, field_validator, EmailStr, ConfigDict
 from fastapi import Form
 from app.api.v1.users.schemas import UserPublic
+from app.api.v1.categories.schemas import CategoryPublic
 
 
 class Tag(BaseModel):
@@ -16,6 +17,7 @@ class PostBase(BaseModel):
     content: str
     tags: Optional[List[Tag]] = Field(default_factory=list)  # []
     user: Optional[UserPublic] = None
+    category: Optional[CategoryPublic] = None
     image_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -36,6 +38,7 @@ class PostCreate(BaseModel):
         examples=["Este es un contenido válido porque tiene 10 caracteres o más"]
     )
     tags: List[Tag] = Field(default_factory=list)  # []
+    category_id: Optional[int] = None
 
     @field_validator("title")
     @classmethod
@@ -49,6 +52,7 @@ class PostCreate(BaseModel):
         cls,
         title: Annotated[str, Form(min_length=3)],
         content: Annotated[str, Form(min_length=10)],
+        category_id: Annotated[int, Form(ge=1)],
         tags: Annotated[Optional[List[str]], Form()] = None,
     ):
         # Fix Módulo 9: el formulario envía "aldosivi, minella" en un solo string.
@@ -60,12 +64,14 @@ class PostCreate(BaseModel):
                 if name and name not in names:
                     names.append(name)
         tag_objs = [Tag(name=n) for n in names]
-        return cls(title=title, content=content, tags=tag_objs)
+        return cls(title=title, content=content, tags=tag_objs,
+                   category_id=category_id)
 
 
 class PostUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=3, max_length=100)
     content: Optional[str] = None
+    category_id: Optional[int] = Field(None, ge=1)
 
 
 class PostPublic(PostBase):

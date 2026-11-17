@@ -7,6 +7,7 @@ from app.core.db import Base
 
 if TYPE_CHECKING:
     from .user import User
+    from .category import CategoryORM
     from .tag import TagORM
 
 post_tags = Table(
@@ -34,6 +35,15 @@ class PostORM(Base):
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     user: Mapped[Optional["User"]] = relationship(
         back_populates="posts", lazy="joined")
+
+    # Módulo 11: un post pertenece a una sola categoría (1 a N)
+    category_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("categories.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+    category: Mapped[Optional["CategoryORM"]] = relationship(
+        "CategoryORM", back_populates="posts", lazy="joined")
 
     tags: Mapped[List["TagORM"]] = relationship(
         secondary=post_tags,

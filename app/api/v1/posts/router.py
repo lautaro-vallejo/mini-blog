@@ -9,6 +9,7 @@ from .repository import PostRepository
 from app.core.security import oauth2_scheme, require_role, has_role, raise_forbidden
 from app.models import User
 from app.services.file_storage import save_uploaded_image
+from app.api.v1.categories.repository import CategoryRepository
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
@@ -42,12 +43,17 @@ def list_posts(
     direction: Literal["asc", "desc"] = Query(
         "asc", description="Dirección de orden"
     ),
+    category: Optional[str] = Query(
+        default=None,
+        description="Filtrar por slug de categoría. Ej: aldosivi"
+    ),
     db: Session = Depends(get_db)
 ):
     repository = PostRepository(db)
     query = query or text
 
-    result = repository.search(query, order_by, direction, page, per_page)
+    result = repository.search(query, order_by, direction, page, per_page,
+                               category_slug=category)
 
     return PaginatedPost(
         page=result["page"],
@@ -105,6 +111,11 @@ def get_post(post_id: int = Path(
 @router.post("", response_model=PostPublic, response_description="Post creado (OK)", status_code=status.HTTP_201_CREATED)
 def create_post(post: Annotated[PostCreate, Depends(PostCreate.as_form)], image: Optional[UploadFile] = File(None), db: Session = Depends(get_db), user: User = Depends(require_role("editor"))):
     repository = PostRepository(db)
+
+    # Validamos la categoría antes de guardar nada (incluida la imagen)
+    if post.category_id is not None and not CategoryRepository(db).get(post.category_id):
+        raise HTTPException(status_code=400, detail="La categoría no existe")
+
     saved = None
     try:
         if image is not None:
@@ -117,7 +128,8 @@ def create_post(post: Annotated[PostCreate, Depends(PostCreate.as_form)], image:
             content=post.content,
             author=user,
             tags=[tag.model_dump() for tag in post.tags],
-            image_url=image_url
+            image_url=image_url,
+            category_id=post.category_id
         )
         db.commit()
         db.refresh(post)
@@ -144,12 +156,19 @@ def update_post(post_id: int, data: PostUpdate, db: Session = Depends(get_db), u
     if post.user_id != user.id and not has_role(user, "admin"):
         raise raise_forbidden()
 
+    updates = data.model_dump(exclude_unset=True)
+    if updates.get("category_id") is not None and not CategoryRepository(db).get(updates["category_id"]):
+        raise HTTPException(status_code=400, detail="La categoría no existe")
+
     try:
-        updates = data.model_dump(exclude_unset=True)
         post = repository.update_post(post, updates)
         db.commit()
         db.refresh(post)
         return post
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail="El título ya existe, prueba con otro")
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(
