@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, selectinload, joinedload
 from app.models import PostORM, TagORM, User, CategoryORM
 from app.services.pagination import paginate_query
 from app.api.v1.tags.repository import TagRepository
+from app.utils.slugify_utils import ensure_unique_slug
 
 
 class PostRepository:
@@ -13,6 +14,10 @@ class PostRepository:
     def get(self, post_id: int) -> Optional[PostORM]:
         post_find = select(PostORM).where(PostORM.id == post_id)
         return self.db.execute(post_find).scalar_one_or_none()
+
+    def get_by_slug(self, slug: str) -> Optional[PostORM]:
+        query = select(PostORM).where(PostORM.slug == slug)
+        return self.db.execute(query).scalars().first()
 
     def search(self, query: Optional[str], order_by: str, direction: str, page: int, per_page: int,
                category_slug: Optional[str] = None) -> dict:
@@ -59,7 +64,9 @@ class PostRepository:
     def create_post(self, title: str, content: str, author: Optional[User], tags: List[dict],
                     image_url: Optional[str], category_id: Optional[int] = None) -> PostORM:
         # Módulo 10: el autor es el usuario autenticado (ya existe en la tabla users)
-        post = PostORM(title=title, content=content, image_url=image_url,
+        # Módulo 12: el slug se genera solo a partir del título (sin colisiones)
+        post = PostORM(title=title, slug=ensure_unique_slug(self.db, title),
+                       content=content, image_url=image_url,
                        user=author, category_id=category_id)
         # Fix Módulo 9: por si llega "a, b" pegado, lo partimos y normalizamos
         names: List[str] = []

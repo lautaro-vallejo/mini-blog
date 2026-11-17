@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, List, Union, Literal, Annotated
 from pydantic import BaseModel, Field, field_validator, EmailStr, ConfigDict
 from fastapi import Form
@@ -76,12 +77,15 @@ class PostUpdate(BaseModel):
 
 class PostPublic(PostBase):
     id: int
+    slug: str
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class PostSummary(BaseModel):
     id: int
+    slug: str
     title: str
 
     model_config = ConfigDict(from_attributes=True)

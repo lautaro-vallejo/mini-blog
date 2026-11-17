@@ -1,62 +1,75 @@
-# FastAPI Mini Blog
+# Mar del Plata Futbolera — FastAPI Mini Blog
 
-API REST para gestionar publicaciones de un blog. Es un proyecto de aprendizaje y portfolio que evoluciona junto con los módulos de desarrollo backend.
+API REST de un mini blog sobre el fútbol de Mar del Plata: Aldosivi, Alvarado, la Liga Marplatense, los torneos de verano y la historia del estadio Minella.
 
-## Funcionalidades implementadas actualmente
+Proyecto de la materia **Desarrollo de Sistemas Web (3° año)**, construido sobre el repositorio base [cgldev/fastapi-miniblog](https://github.com/cgldev/fastapi-miniblog) siguiendo los módulos 8 a 12.
 
-- Crear, listar, consultar, actualizar y eliminar publicaciones.
-- Buscar publicaciones por título.
-- Paginar resultados y ordenar por identificador o título.
-- Filtrar publicaciones por una o más etiquetas.
-- Asociar opcionalmente un autor y etiquetas a una publicación.
-- Validar datos de entrada mediante Pydantic.
-- Manejar respuestas HTTP para recursos no encontrados y errores de persistencia.
-- Documentación interactiva generada por FastAPI.
+## Funcionalidades
+
+| Módulo | Qué incluye |
+|---|---|
+| 8 · Archivos | Subida de imágenes (PNG/JPEG, nombre UUID, límite de MB) servidas en `/media` |
+| 9 · Tags | CRUD de tags, fix de tags separados por comas, paginación global (`services/pagination.py`) y tag más popular |
+| 10 · Usuarios | Modelo `User`, contraseñas con **pwdlib (Argon2)**, JWT, registro/login y roles `user` < `editor` < `admin` |
+| 11 · Categorías | Categorías con slug (1 a N con posts), `ON DELETE SET NULL`, filtro de posts por categoría |
+| 12 · Seeds y slugs | Slug automático y único para cada post, `GET /posts/post/{slug}` y CLI de seeds con Typer |
 
 ## Tecnologías
 
-- Python
-- FastAPI
-- Pydantic v2
-- SQLAlchemy 2
-- SQLite para desarrollo local
-- python-dotenv para configuración mediante variables de entorno
+Python · FastAPI · Pydantic v2 · SQLAlchemy 2 · SQLite · PyJWT · pwdlib · python-slugify · Typer
 
-## Estructura principal
+## Estructura
 
 ```text
 app/
 ├── main.py
-├── core/
-│   └── db.py
-├── models/
-│   ├── author.py
-│   ├── post.py
-│   └── tag.py
-└── api/
-    └── v1/
-        └── posts/
-            ├── router.py
-            ├── repository.py
-            └── schemas.py
+├── core/          config.py · db.py · security.py
+├── models/        user.py · post.py · tag.py · category.py
+├── services/      file_storage.py · pagination.py
+├── utils/         slugify_utils.py
+├── seeds/         data.py · service.py · run.py · __main__.py
+└── api/v1/
+    ├── auth/        router.py · schemas.py
+    ├── users/       router.py · repository.py · schemas.py
+    ├── posts/       router.py · repository.py · schemas.py
+    ├── tags/        router.py · repository.py · schemas.py
+    ├── categories/  router.py · repository.py · schemas.py
+    └── uploads/     router.py
 ```
 
-## Requisitos
-
-Python 3.10 o superior. Las dependencias están declaradas en `requirements.txt`.
-
-## Instalación en Windows (PowerShell)
-
-Desde la raíz del repositorio:
+## Instalación (Windows, PowerShell)
 
 ```powershell
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+copy .env.example .env   # y cambiá JWT_SECRET
 ```
 
-Si necesitás usar variables de entorno, copiá `.env.example` como `.env` y ajustá los valores para tu entorno. No subas el archivo `.env` a GitHub.
+> Si ya tenías un `blog.db` de módulos anteriores, borralo: el esquema cambió (usuarios, categorías y slug) y `create_all` no modifica tablas existentes.
+
+## Cargar datos de ejemplo (seeds)
+
+```powershell
+python -m app.seeds all          # todo
+python -m app.seeds users        # solo usuarios
+python -m app.seeds categories   # solo categorías
+python -m app.seeds tags         # solo tags
+python -m app.seeds posts        # posts (y sus dependencias)
+```
+
+Los seeds son idempotentes: se pueden ejecutar varias veces sin duplicar datos.
+
+Usuarios de desarrollo:
+
+| Email | Contraseña | Rol |
+|---|---|---|
+| `admin@mdpfutbolera.com` | `Admin1234!` | admin |
+| `editor@mdpfutbolera.com` | `Editor1234!` | editor |
+| `hincha@mdpfutbolera.com` | `Hincha1234!` | user |
+
+> Son claves solo para desarrollo. Se pueden cambiar con `SEED_ADMIN_PASSWORD`, `SEED_EDITOR_PASSWORD` y `SEED_USER_PASSWORD`.
 
 ## Ejecutar la API
 
@@ -64,29 +77,41 @@ Si necesitás usar variables de entorno, copiá `.env.example` como `.env` y aju
 fastapi dev app/main.py
 ```
 
-Abrí la documentación interactiva en `http://127.0.0.1:8000/docs`.
+Documentación: `http://127.0.0.1:8000/docs`. Para autenticarte, usá **Authorize** y poné el email en el campo `username`.
 
-## Endpoints actuales
+## Endpoints (prefijo `/api/v1`)
 
-| Método | Ruta | Propósito |
-|---|---|---|
-| `GET` | `/posts` | Listar publicaciones, con búsqueda, paginación y orden |
-| `GET` | `/posts/by-tags` | Filtrar publicaciones por etiquetas |
-| `GET` | `/posts/{post_id}` | Consultar una publicación; permite omitir el contenido |
-| `POST` | `/posts` | Crear una publicación |
-| `PUT` | `/posts/{post_id}` | Actualizar una publicación |
-| `DELETE` | `/posts/{post_id}` | Eliminar una publicación |
+| Método | Ruta | Permiso | Propósito |
+|---|---|---|---|
+| `POST` | `/auth/register` | público | Registrar usuario (rol `user`) |
+| `POST` | `/auth/login` | público | Login por formulario (Swagger) |
+| `POST` | `/auth/login/json` | público | Login con JSON `{email, password}` |
+| `GET` | `/auth/me` | logueado | Mi perfil |
+| `GET` | `/users` | admin | Listar usuarios (paginado, `?search=`) |
+| `GET` | `/users/{id}` | admin | Ver usuario |
+| `PATCH` | `/users/{id}/role` | admin | Cambiar rol |
+| `PATCH` | `/users/{id}/status` | admin | Activar / desactivar |
+| `DELETE` | `/users/{id}` | admin | Eliminar usuario |
+| `GET` | `/posts` | público | Listar (búsqueda, paginación, orden, `?category=slug`) |
+| `GET` | `/posts/by-tags` | público | Filtrar por tags |
+| `GET` | `/posts/post/{slug}` | público | Ver post por slug |
+| `GET` | `/posts/{id}` | público | Ver post por id |
+| `POST` | `/posts` | editor | Crear post (multipart: título, contenido, `category_id`, tags, imagen) |
+| `PUT` | `/posts/{id}` | editor (propio) / admin | Actualizar post |
+| `DELETE` | `/posts/{id}` | editor (propio) / admin | Eliminar post |
+| `GET` | `/tags` | público | Listar tags (paginado) |
+| `GET` | `/tags/popular` | público | Tag más usado |
+| `GET` | `/tags/{id}` | público | Ver tag |
+| `POST` / `PUT` | `/tags` · `/tags/{id}` | editor | Crear / renombrar tag |
+| `DELETE` | `/tags/{id}` | admin | Eliminar tag |
+| `GET` | `/categories` | público | Listar categorías |
+| `GET` | `/categories/{id}` · `/categories/slug/{slug}` | público | Ver categoría |
+| `POST` / `PATCH` | `/categories` · `/categories/{id}` | editor | Crear / editar categoría |
+| `DELETE` | `/categories/{id}` | admin | Eliminar categoría (los posts quedan sin categoría) |
+| `POST` | `/upload/save` | público | Subir una imagen suelta |
 
-## Estado del proyecto
-
-Esta es la versión inicial publicada del proyecto. La autenticación JWT, la gestión independiente de usuarios/categorías/etiquetas, los slugs, las migraciones con Alembic, PostgreSQL y el despliegue son trabajo futuro y no se presentan aquí como funcionalidades ya implementadas.
-
-Actualmente, la aplicación crea las tablas al iniciar, una solución de desarrollo que se revisará al incorporar migraciones.
-
-## Objetivo educativo
-
-El repositorio acompaña el aprendizaje de desarrollo de APIs REST y se ampliará con commits pequeños y coherentes a medida que se implementen nuevas funcionalidades. Cada commit documentará un cambio real en el código.
+Las imágenes quedan accesibles en `/media/<archivo>`.
 
 ## Autor
 
-César Gimenez Lascano — [@cgldev](https://github.com/cgldev)
+Proyecto base: César Gimenez Lascano — [@cgldev](https://github.com/cgldev)

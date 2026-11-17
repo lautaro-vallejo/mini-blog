@@ -82,6 +82,26 @@ def filter_by_tags(
     return repository.by_tags(tags)
 
 
+@router.get(
+    "/post/{slug}",
+    response_model=Union[PostPublic, PostSummary],
+    response_description="Post encontrado por slug"
+)
+def get_post_by_slug(
+    slug: str,
+    include_content: bool = Query(True, description="Incluir o no el contenido"),
+    db: Session = Depends(get_db)
+):
+    repository = PostRepository(db)
+    post = repository.get_by_slug(slug)
+    if not post:
+        raise HTTPException(status_code=404, detail="Post no encontrado")
+
+    if include_content:
+        return PostPublic.model_validate(post)
+    return PostSummary.model_validate(post)
+
+
 @router.get("/secure")
 def secure_endpoint(token: str = Depends(oauth2_scheme)):
     return {"message": "Acceso autorizado", "token": token}
