@@ -18,8 +18,20 @@ MEDIA_DIR = "app/media"
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Mini Blog")
-    Base.metadata.create_all(bind=engine)  # dev
+    app = FastAPI(
+        title="Mar del Plata Futbolera",
+        description="Mini blog sobre el fútbol de Mar del Plata (FastAPI)",
+    )
+    Base.metadata.create_all(bind=engine)  # dev (más adelante: Alembic)
+
+    @app.get("/", tags=["info"])
+    def root():
+        return {"blog": "Mar del Plata Futbolera", "docs": "/docs"}
+
+    @app.get("/health", tags=["info"])
+    def health():
+        # Render lo usa para saber si el servicio está vivo
+        return {"status": "ok"}
 
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(post_router, prefix="/api/v1")
