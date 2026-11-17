@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session, selectinload, joinedload
-from app.models import PostORM, TagORM, AuthorORM
+from app.models import PostORM, TagORM, User
 from app.services.pagination import paginate_query
 from app.api.v1.tags.repository import TagRepository
 
@@ -40,41 +40,21 @@ class PostRepository:
             select(PostORM)
             .options(
                 selectinload(PostORM.tags),
-                joinedload(PostORM.author),
+                joinedload(PostORM.user),
             ).where(PostORM.tags.any(func.lower(TagORM.name).in_(normalized_tag_names)))
             .order_by(PostORM.id.asc())
         )
 
         return self.db.execute(post_list).scalars().all()
 
-    def ensure_author(self, name: str, email: str) -> AuthorORM:
-
-        author_obj = self.db.execute(
-            select(AuthorORM).where(AuthorORM.email == email)
-        ).scalar_one_or_none()
-
-        if author_obj:
-            return author_obj
-
-        author_obj = AuthorORM(name=name,
-                               email=email)
-        self.db.add(author_obj)
-        self.db.flush()
-
-        return author_obj
-
     def ensure_tag(self, name: str) -> TagORM:
         # Delegamos en el repositorio aislado de Tags (normaliza con strip().lower())
         return TagRepository(self.db).ensure_tag(name)
 
-    def create_post(self, title: str, content: str, author: Optional[dict], tags: List[dict], image_url: str) -> PostORM:
-        author_obj = None
-        if author:
-            author_obj = self.ensure_author(
-                author["username"], author["email"])
-
+    def create_post(self, title: str, content: str, author: Optional[User], tags: List[dict], image_url: Optional[str]) -> PostORM:
+        # Módulo 10: el autor es el usuario autenticado (ya existe en la tabla users)
         post = PostORM(title=title, content=content, image_url=image_url,
-                       author=author_obj)
+                       user=author)
         # Fix Módulo 9: por si llega "a, b" pegado, lo partimos y normalizamos
         names: List[str] = []
         for tag in tags:

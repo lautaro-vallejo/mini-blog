@@ -6,7 +6,8 @@ from app.core.db import get_db
 from .schemas import (PostPublic, PaginatedPost,
                       PostCreate, PostUpdate, PostSummary)
 from .repository import PostRepository
-from app.core.security import oauth2_scheme, get_current_user
+from app.core.security import oauth2_scheme, require_role, has_role, raise_forbidden
+from app.models import User
 from app.services.file_storage import save_uploaded_image
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -102,7 +103,7 @@ def get_post(post_id: int = Path(
 
 
 @router.post("", response_model=PostPublic, response_description="Post creado (OK)", status_code=status.HTTP_201_CREATED)
-def create_post(post: Annotated[PostCreate, Depends(PostCreate.as_form)], image: Optional[UploadFile] = File(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def create_post(post: Annotated[PostCreate, Depends(PostCreate.as_form)], image: Optional[UploadFile] = File(None), db: Session = Depends(get_db), user: User = Depends(require_role("editor"))):
     repository = PostRepository(db)
     saved = None
     try:
@@ -131,13 +132,17 @@ def create_post(post: Annotated[PostCreate, Depends(PostCreate.as_form)], image:
 
 
 @router.put("/{post_id}", response_model=PostPublic, response_description="Post actualizado", response_model_exclude_none=True)
-def update_post(post_id: int, data: PostUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_post(post_id: int, data: PostUpdate, db: Session = Depends(get_db), user: User = Depends(require_role("editor"))):
 
     repository = PostRepository(db)
     post = repository.get(post_id)
 
     if not post:
         raise HTTPException(status_code=404, detail="Post no encontrado")
+
+    # Un editor solo puede modificar sus propios posts; el admin, cualquiera
+    if post.user_id != user.id and not has_role(user, "admin"):
+        raise raise_forbidden()
 
     try:
         updates = data.model_dump(exclude_unset=True)
@@ -152,12 +157,16 @@ def update_post(post_id: int, data: PostUpdate, db: Session = Depends(get_db), u
 
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(post_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def delete_post(post_id: int, db: Session = Depends(get_db), user: User = Depends(require_role("editor"))):
     repository = PostRepository(db)
     post = repository.get(post_id)
 
     if not post:
         raise HTTPException(status_code=404, detail="Post no encontrado")
+
+    # Un editor solo puede modificar sus propios posts; el admin, cualquiera
+    if post.user_id != user.id and not has_role(user, "admin"):
+        raise raise_forbidden()
 
     try:
         repository.delete_post(post)

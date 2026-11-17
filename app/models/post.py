@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.db import Base
 
 if TYPE_CHECKING:
-    from .author import AuthorORM
+    from .user import User
     from .tag import TagORM
 
 post_tags = Table(
@@ -29,9 +29,11 @@ class PostORM(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow)
 
-    author_id: Mapped[Optional[int]] = mapped_column(ForeignKey("authors.id"))
-    author: Mapped[Optional["AuthorORM"]] = relationship(
-        back_populates="posts")
+    # Módulo 10: el autor ahora es un usuario real de la tabla users
+    user_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    user: Mapped[Optional["User"]] = relationship(
+        back_populates="posts", lazy="joined")
 
     tags: Mapped[List["TagORM"]] = relationship(
         secondary=post_tags,

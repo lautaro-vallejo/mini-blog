@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.security import require_role
+from app.models import User
 from .repository import TagRepository
 from .schemas import (PaginatedTags, TagCreate, TagPublic, TagUpdate,
                       TagWithCount)
@@ -55,7 +57,8 @@ def get_tag(tag_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=TagPublic, status_code=status.HTTP_201_CREATED)
-def create_tag(tag: TagCreate, db: Session = Depends(get_db)):
+def create_tag(tag: TagCreate, db: Session = Depends(get_db),
+               user: User = Depends(require_role("editor"))):
     repository = TagRepository(db)
     try:
         tag_created = repository.create_tag(name=tag.name)
@@ -66,7 +69,8 @@ def create_tag(tag: TagCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{tag_id}", response_model=TagPublic)
-def update_tag(tag_id: int, data: TagUpdate, db: Session = Depends(get_db)):
+def update_tag(tag_id: int, data: TagUpdate, db: Session = Depends(get_db),
+               user: User = Depends(require_role("editor"))):
     repository = TagRepository(db)
     try:
         tag = repository.update(tag_id, data.name)
@@ -79,7 +83,8 @@ def update_tag(tag_id: int, data: TagUpdate, db: Session = Depends(get_db)):
 
 
 @router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_tag(tag_id: int, db: Session = Depends(get_db)):
+def delete_tag(tag_id: int, db: Session = Depends(get_db),
+               user: User = Depends(require_role("admin"))):
     repository = TagRepository(db)
     if not repository.delete(tag_id):
         raise HTTPException(status_code=404, detail="Tag no encontrado")

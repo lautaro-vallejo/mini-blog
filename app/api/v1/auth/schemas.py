@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class Token(BaseModel):
@@ -8,10 +8,3 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     sub: str
-    username: str
-
-
-class UserPublic(BaseModel):
-    email: str
-    username: str
-    model_config = ConfigDict(from_attributes=True)
