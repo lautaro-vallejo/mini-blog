@@ -1,21 +1,17 @@
-"""Datos iniciales de "Mar del Plata Futbolera".
 
-Las contraseñas se pueden pisar con variables de entorno (SEED_ADMIN_PASSWORD, etc.).
-Son datos de DESARROLLO: no usar estas claves en producción.
-"""
 import os
 
 USERS = [
     {
-        "email": "admin@mdpfutbolera.com",
+        "email": "lau@gmail.com",
         "username": "admin",
-        "password": os.getenv("SEED_ADMIN_PASSWORD", "Admin1234!"),
+        "password": os.getenv("SEED_ADMIN_PASSWORD", "L123!"),
         "role": "admin",
     },
     {
-        "email": "editor@mdpfutbolera.com",
+        "email": "edit@gmail.com",
         "username": "cronista_costero",
-        "password": os.getenv("SEED_EDITOR_PASSWORD", "Editor1234!"),
+        "password": os.getenv("SEED_EDITOR_PASSWORD", "L123!"),
         "role": "editor",
     },
     {
