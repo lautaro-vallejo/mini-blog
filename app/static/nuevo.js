@@ -1,9 +1,5 @@
-const API = "/api/v1";
-
-const token = localStorage.getItem("token");
-
-// Si no hay token, lo mando a loguearse
-if (!token) {
+// Si no inició sesión, lo mando al login
+if (!obtenerToken()) {
   window.location.href = "login.html";
 }
 
@@ -24,7 +20,13 @@ async function cargarCategorias() {
 document.getElementById("formulario").onsubmit = async (evento) => {
   evento.preventDefault();
 
-  // FormData porque mandamos texto + archivo (multipart, como en el Módulo 8)
+  const error = document.getElementById("error");
+  const boton = document.getElementById("publicar");
+  error.textContent = "";
+  boton.disabled = true; // para que no lo aprieten dos veces
+  boton.textContent = "Publicando...";
+
+  // FormData porque mandamos texto y un archivo juntos (multipart, Módulo 8)
   const datos = new FormData();
   datos.append("title", document.getElementById("titulo").value);
   datos.append("content", document.getElementById("contenido").value);
@@ -38,14 +40,15 @@ document.getElementById("formulario").onsubmit = async (evento) => {
 
   const respuesta = await fetch(API + "/posts", {
     method: "POST",
-    headers: { Authorization: "Bearer " + token }, // el token del login
+    headers: { Authorization: "Bearer " + obtenerToken() }, // token del login
     body: datos,
   });
 
-  const error = document.getElementById("error");
+  boton.disabled = false;
+  boton.textContent = "Publicar";
 
   if (respuesta.status === 401) {
-    // El token venció (dura 30 minutos)
+    // El token venció (dura 30 minutos): hay que loguearse de nuevo
     localStorage.removeItem("token");
     window.location.href = "login.html";
     return;
@@ -62,7 +65,7 @@ document.getElementById("formulario").onsubmit = async (evento) => {
     return;
   }
 
-  // Si salió bien, abro el post nuevo
+  // Si salió bien, abro el post recién creado
   const post = await respuesta.json();
   window.location.href = "post.html?slug=" + post.slug;
 };

@@ -4,26 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Post - Mar del Plata Futbolera</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-  <header>
-    <h1>Mar del Plata Futbolera</h1>
-    <a href="index.html">Inicio</a>
-    <a href="nuevo.html">Escribir post</a>
-    <a href="login.html">Login</a>
-  </header>
+  <nav>
+    <div>
+      <a href="index.html" class="logo">⚽ MdP Futbolera</a>
+      <a href="index.html">Inicio</a>
+      <a href="nuevo.html">Escribir post</a>
+    </div>
+    <div id="usuario"></div>
+  </nav>
 
   <main>
-    <div class="post">
-      <h2 id="titulo">Cargando...</h2>
+    <p><a href="index.html">← Volver a los posts</a></p>
+
+    <article class="articulo">
+      <span class="etiqueta-categoria" id="categoria"></span>
+      <h1 id="titulo">Cargando...</h1>
       <p class="datos" id="datos"></p>
       <img id="imagen" style="display: none;">
-      <p id="contenido"></p>
+      <div class="contenido" id="contenido"></div>
       <div id="tags"></div>
-    </div>
+    </article>
   </main>
 
+  <footer>Mar del Plata Futbolera · Proyecto hecho con FastAPI</footer>
+
+  <script src="comun.js"></script>
   <script src="post.js"></script>
 </body>
 </html>

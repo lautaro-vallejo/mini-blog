@@ -1,15 +1,3 @@
-const API = "/api/v1";
-
-// Muestro si ya hay alguien logueado
-function mostrarEstado() {
-  const token = localStorage.getItem("token");
-  if (token) {
-    document.getElementById("estado").textContent = "Ya iniciaste sesión.";
-  } else {
-    document.getElementById("estado").textContent = "No iniciaste sesión.";
-  }
-}
-
 document.getElementById("formulario").onsubmit = async (evento) => {
   evento.preventDefault(); // evita que la página se recargue
 
@@ -28,16 +16,9 @@ document.getElementById("formulario").onsubmit = async (evento) => {
     return;
   }
 
-  // Guardo el token en el navegador para usarlo después
+  // Guardo el token en el navegador para usarlo en las otras páginas
   const datos = await respuesta.json();
   localStorage.setItem("token", datos.access_token);
 
   window.location.href = "nuevo.html";
 };
-
-document.getElementById("salir").onclick = () => {
-  localStorage.removeItem("token");
-  mostrarEstado();
-};
-
-mostrarEstado();

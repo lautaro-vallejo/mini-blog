@@ -3,41 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nuevo post - Mar del Plata Futbolera</title>
+  <title>Escribir post - Mar del Plata Futbolera</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-  <header>
-    <h1>Mar del Plata Futbolera</h1>
-    <a href="index.html">Inicio</a>
-    <a href="nuevo.html">Escribir post</a>
-    <a href="login.html">Login</a>
-  </header>
+  <nav>
+    <div>
+      <a href="index.html" class="logo">⚽ MdP Futbolera</a>
+      <a href="index.html">Inicio</a>
+      <a href="nuevo.html">Escribir post</a>
+    </div>
+    <div id="usuario"></div>
+  </nav>
 
   <main>
-    <h2>Escribir un post</h2>
+    <form class="caja" id="formulario">
+      <h2>Escribir un post</h2>
 
-    <form id="formulario">
-      <label>Título</label>
+      <label for="titulo">Título</label>
       <input type="text" id="titulo" minlength="3" maxlength="100" required>
 
-      <label>Contenido</label>
+      <label for="contenido">Contenido</label>
       <textarea id="contenido" minlength="10" required></textarea>
 
-      <label>Categoría</label>
+      <label for="categoria">Categoría</label>
       <select id="categoria" required></select>
 
-      <label>Tags (separados por coma)</label>
+      <label for="tags">Tags</label>
       <input type="text" id="tags" placeholder="aldosivi, minella">
+      <p class="ayuda">Separados por coma.</p>
 
-      <label>Imagen (PNG o JPG, opcional)</label>
+      <label for="imagen">Imagen (opcional)</label>
       <input type="file" id="imagen" accept="image/png, image/jpeg">
+      <p class="ayuda">PNG o JPG, hasta 3 MB.</p>
 
-      <button type="submit">Publicar</button>
+      <button type="submit" id="publicar">Publicar</button>
       <p class="error" id="error"></p>
     </form>
   </main>
 
+  <script src="comun.js"></script>
   <script src="nuevo.js"></script>
 </body>
 </html>

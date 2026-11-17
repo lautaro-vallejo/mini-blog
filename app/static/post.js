@@ -1,6 +1,4 @@
-const API = "/api/v1";
-
-// Leo el slug de la dirección. Ejemplo: post.html?slug=previa-del-clasico
+// Leo el slug de la dirección. Ejemplo: post.html?slug=previa-del-clasico-marplatense
 const parametros = new URLSearchParams(window.location.search);
 const slug = parametros.get("slug");
 
@@ -14,25 +12,35 @@ async function cargarPost() {
 
   const post = await respuesta.json();
 
-  document.title = post.title; // cambia el título de la pestaña
+  document.title = post.title + " - MdP Futbolera"; // título de la pestaña
   document.getElementById("titulo").textContent = post.title;
-  document.getElementById("contenido").textContent = post.content;
+  document.getElementById("categoria").textContent =
+    post.category ? post.category.name : "Sin categoría";
 
-  // Categoría, autor y fecha
-  const categoria = post.category ? post.category.name : "Sin categoría";
   const autor = post.user ? post.user.username : "anónimo";
-  const fecha = new Date(post.created_at).toLocaleDateString("es-AR");
   document.getElementById("datos").textContent =
-    categoria + " · por " + autor + " · " + fecha;
+    "Por " + autor + " · " + formatearFecha(post.created_at);
 
-  // La imagen solo se muestra si el post tiene una
+  // La imagen solo aparece si el post tiene una
   if (post.image_url) {
     const imagen = document.getElementById("imagen");
     imagen.src = post.image_url;
+    imagen.alt = post.title;
     imagen.style.display = "block";
   }
 
-  // Un cartelito amarillo por cada tag
+  // Cada salto de línea del contenido se convierte en un párrafo
+  const contenido = document.getElementById("contenido");
+  const parrafos = post.content.split("\n");
+  for (const texto of parrafos) {
+    if (texto.trim() !== "") {
+      const parrafo = document.createElement("p");
+      parrafo.textContent = texto;
+      contenido.appendChild(parrafo);
+    }
+  }
+
+  // Un cartelito por cada tag
   const contenedorTags = document.getElementById("tags");
   for (const tag of post.tags) {
     const span = document.createElement("span");

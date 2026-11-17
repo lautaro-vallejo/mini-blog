@@ -90,14 +90,15 @@ Documentación: `http://127.0.0.1:8000/docs`. Para autenticarte, usá **Authoriz
 Hay un frontend simple en `app/static/` (HTML, CSS y JavaScript sin frameworks) que consume la API. Lo sirve el mismo FastAPI:
 
 - `http://127.0.0.1:8000/` → redirige a la portada (`/web/`)
-- Portada con posts, filtro por categoría y paginación
+- Portada con posts en tarjetas, filtro por categoría, buscador y paginación
 - `post.html?slug=...` → un post completo
 - `login.html` → guarda el token JWT en el navegador (`localStorage`)
 - `nuevo.html` → publicar un post con imagen (necesita rol editor o admin)
 
 | Archivo | Qué hace |
 |---|---|
-| `index.html` + `inicio.js` | Lista de posts, categorías y paginación |
+| `comun.js` | Cosas compartidas: dirección de la API, usuario logueado en el menú, fechas |
+| `index.html` + `inicio.js` | Lista de posts, categorías, buscador y paginación |
 | `post.html` + `post.js` | Muestra un post por su slug |
 | `login.html` + `login.js` | Login con `/auth/login/json` |
 | `nuevo.html` + `nuevo.js` | Formulario multipart a `POST /posts` |
