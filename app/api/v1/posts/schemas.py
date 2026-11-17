@@ -57,7 +57,15 @@ class PostCreate(BaseModel):
         content: Annotated[str, Form(min_length=10)],
         tags: Annotated[Optional[List[str]], Form()] = None,
     ):
-        tag_objs = [Tag(name=t) for t in (tags or [])]
+        # Fix Módulo 9: el formulario envía "aldosivi, minella" en un solo string.
+        # Partimos por comas, limpiamos y evitamos duplicados.
+        names: List[str] = []
+        for raw in (tags or []):
+            for part in raw.split(","):
+                name = part.strip().lower()
+                if name and name not in names:
+                    names.append(name)
+        tag_objs = [Tag(name=n) for n in names]
         return cls(title=title, content=content, tags=tag_objs)
 
 

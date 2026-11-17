@@ -1,4 +1,3 @@
-from math import ceil
 from fastapi import APIRouter, Query, Depends, Path, status, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -47,26 +46,19 @@ def list_posts(
     repository = PostRepository(db)
     query = query or text
 
-    total, items = repository.search(
-        query, order_by, direction, page, per_page)
-
-    total_pages = ceil(total/per_page) if total > 0 else 0
-    current_page = 1 if total_pages == 0 else min(page, total_pages)
-
-    has_prev = current_page > 1
-    has_next = current_page < total_pages if total_pages > 0 else False
+    result = repository.search(query, order_by, direction, page, per_page)
 
     return PaginatedPost(
-        page=current_page,
+        page=result["page"],
         per_page=per_page,
-        total=total,
-        total_pages=total_pages,
-        has_prev=has_prev,
-        has_next=has_next,
+        total=result["total"],
+        total_pages=result["pages"],
+        has_prev=result["has_prev"],
+        has_next=result["has_next"],
         order_by=order_by,
         direction=direction,
         search=query,
-        items=items
+        items=result["items"]
     )
 
 
@@ -81,6 +73,11 @@ def filter_by_tags(
 ):
     repository = PostRepository(db)
     return repository.by_tags(tags)
+
+
+@router.get("/secure")
+def secure_endpoint(token: str = Depends(oauth2_scheme)):
+    return {"message": "Acceso autorizado", "token": token}
 
 
 @router.get("/{post_id}", response_model=Union[PostPublic, PostSummary], response_description="Post encontrado")
@@ -169,8 +166,3 @@ def delete_post(post_id: int, db: Session = Depends(get_db), user=Depends(get_cu
         db.rollback()
         raise HTTPException(
             status_code=500, detail="Error al eliminar el post")
-
-
-@router.get("/secure")
-def secure_endpoint(token: str = Depends(oauth2_scheme)):
-    return {"message": "Acceso autorizado", "token": token}

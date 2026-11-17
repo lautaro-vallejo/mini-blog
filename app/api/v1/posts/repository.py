@@ -1,8 +1,9 @@
-from math import ceil
-from typing import Optional, List, Tuple
+from typing import Optional, List
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session, selectinload, joinedload
 from app.models import PostORM, TagORM, AuthorORM
+from app.services.pagination import paginate_query
+from app.api.v1.tags.repository import TagRepository
 
 
 class PostRepository:
@@ -13,32 +14,20 @@ class PostRepository:
         post_find = select(PostORM).where(PostORM.id == post_id)
         return self.db.execute(post_find).scalar_one_or_none()
 
-    def search(self, query: Optional[str], order_by: str, direction: str, page: int, per_page: int) -> Tuple[int, List[PostORM]]:
+    def search(self, query: Optional[str], order_by: str, direction: str, page: int, per_page: int) -> dict:
         results = select(PostORM)
 
         if query:
             results = results.where(PostORM.title.ilike(f"%{query}%"))
 
-        total = self.db.scalar(select(func.count()).select_from(
-            results.subquery())) or 0
-        if total == 0:
-            return 0, []
-
-        current_page = min(page, max(1, ceil(total/per_page)))
-
-        order_col = PostORM.id if order_by == "id" else func.lower(
-            PostORM.title)
-
-        results = results.order_by(
-            order_col.asc() if direction == "asc" else order_col.desc())
-        # results = sorted(
-        #     results, key=lambda post: post[order_by], reverse=(direction == "desc"))
-
-        start = (current_page - 1) * per_page
-        items = self.db.execute(results.limit(
-            per_page).offset(start)).scalars().all()
-
-        return total, items
+        # Módulo 9: usamos la paginación global en lugar de repetir la lógica
+        return paginate_query(
+            self.db, PostORM, base_query=results,
+            page=page, per_page=per_page,
+            order_by=order_by, direction=direction,
+            allowed_order={"id": PostORM.id,
+                           "title": func.lower(PostORM.title)},
+        )
 
     def by_tags(self, tags: List[str]) -> List[PostORM]:
         normalized_tag_names = [tag.strip().lower()
@@ -75,18 +64,8 @@ class PostRepository:
         return author_obj
 
     def ensure_tag(self, name: str) -> TagORM:
-
-        tag_obj = self.db.execute(
-            select(TagORM).where(TagORM.name.ilike(name))).scalar_one_or_none()
-
-        if tag_obj:
-            return tag_obj
-
-        tag_obj = TagORM(name=name)
-        self.db.add(tag_obj)
-        self.db.flush()
-
-        return tag_obj
+        # Delegamos en el repositorio aislado de Tags (normaliza con strip().lower())
+        return TagRepository(self.db).ensure_tag(name)
 
     def create_post(self, title: str, content: str, author: Optional[dict], tags: List[dict], image_url: str) -> PostORM:
         author_obj = None
@@ -96,9 +75,15 @@ class PostRepository:
 
         post = PostORM(title=title, content=content, image_url=image_url,
                        author=author_obj)
+        # Fix Módulo 9: por si llega "a, b" pegado, lo partimos y normalizamos
+        names: List[str] = []
         for tag in tags:
-            tag_obj = self.ensure_tag(tag["name"])
-            post.tags.append(tag_obj)
+            for part in tag["name"].split(","):
+                name = part.strip().lower()
+                if name and name not in names:
+                    names.append(name)
+        for name in names:
+            post.tags.append(self.ensure_tag(name))
 
         self.db.add(post)
         self.db.flush()
