@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuevo post - Mar del Plata Futbolera</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <header>
+    <h1>Mar del Plata Futbolera</h1>
+    <a href="index.html">Inicio</a>
+    <a href="nuevo.html">Escribir post</a>
+    <a href="login.html">Login</a>
+  </header>
+
+  <main>
+    <h2>Escribir un post</h2>
+
+    <form id="formulario">
+      <label>Título</label>
+      <input type="text" id="titulo" minlength="3" maxlength="100" required>
+
+      <label>Contenido</label>
+      <textarea id="contenido" minlength="10" required></textarea>
+
+      <label>Categoría</label>
+      <select id="categoria" required></select>
+
+      <label>Tags (separados por coma)</label>
+      <input type="text" id="tags" placeholder="aldosivi, minella">
+
+      <label>Imagen (PNG o JPG, opcional)</label>
+      <input type="file" id="imagen" accept="image/png, image/jpeg">
+
+      <button type="submit">Publicar</button>
+      <p class="error" id="error"></p>
+    </form>
+  </main>
+
+  <script src="nuevo.js"></script>
+</body>
+</html>

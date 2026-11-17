@@ -33,6 +33,7 @@ app/
 ├── services/      file_storage.py · pagination.py
 ├── utils/         slugify_utils.py
 ├── seeds/         data.py · service.py · run.py · __main__.py
+├── static/        frontend (HTML, CSS, JS)
 └── api/v1/
     ├── auth/        router.py · schemas.py
     ├── users/       router.py · repository.py · schemas.py
@@ -83,6 +84,24 @@ fastapi dev app/main.py
 ```
 
 Documentación: `http://127.0.0.1:8000/docs`. Para autenticarte, usá **Authorize** y poné el email en el campo `username`.
+
+## Frontend
+
+Hay un frontend simple en `app/static/` (HTML, CSS y JavaScript sin frameworks) que consume la API. Lo sirve el mismo FastAPI:
+
+- `http://127.0.0.1:8000/` → redirige a la portada (`/web/`)
+- Portada con posts, filtro por categoría y paginación
+- `post.html?slug=...` → un post completo
+- `login.html` → guarda el token JWT en el navegador (`localStorage`)
+- `nuevo.html` → publicar un post con imagen (necesita rol editor o admin)
+
+| Archivo | Qué hace |
+|---|---|
+| `index.html` + `inicio.js` | Lista de posts, categorías y paginación |
+| `post.html` + `post.js` | Muestra un post por su slug |
+| `login.html` + `login.js` | Login con `/auth/login/json` |
+| `nuevo.html` + `nuevo.js` | Formulario multipart a `POST /posts` |
+| `estilos.css` | Estilos de todas las páginas |
 
 ## Módulo 7: probar sync vs async
 

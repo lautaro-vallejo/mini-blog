@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Mar del Plata Futbolera</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <header>
+    <h1>Mar del Plata Futbolera</h1>
+    <a href="index.html">Inicio</a>
+    <a href="nuevo.html">Escribir post</a>
+    <a href="login.html">Login</a>
+  </header>
+
+  <main>
+    <h2>Iniciar sesión</h2>
+
+    <p id="estado"></p>
+
+    <form id="formulario">
+      <label>Email</label>
+      <input type="email" id="email" required>
+
+      <label>Contraseña</label>
+      <input type="password" id="password" required>
+
+      <button type="submit">Entrar</button>
+      <p class="error" id="error"></p>
+    </form>
+
+    <button id="salir">Cerrar sesión</button>
+  </main>
+
+  <script src="login.js"></script>
+</body>
+</html>

@@ -13,6 +13,7 @@ from app.api.v1.tags.router import router as tag_router
 from app.api.v1.users.router import router as user_router
 from app.api.v1.categories.router import router as category_router
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 
 MEDIA_DIR = "app/media"
 
@@ -24,9 +25,10 @@ def create_app() -> FastAPI:
     )
     Base.metadata.create_all(bind=engine)  # dev (más adelante: Alembic)
 
-    @app.get("/", tags=["info"])
+    @app.get("/", include_in_schema=False)
     def root():
-        return {"blog": "Mar del Plata Futbolera", "docs": "/docs"}
+        # La portada del blog (el frontend está en app/static)
+        return RedirectResponse(url="/web/")
 
     @app.get("/health", tags=["info"])
     def health():
@@ -42,6 +44,8 @@ def create_app() -> FastAPI:
 
     os.makedirs(MEDIA_DIR, exist_ok=True)  # Ensure media directory exists
     app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
+    # Frontend simple: HTML + CSS + JS que consumen la API
+    app.mount("/web", StaticFiles(directory="app/static", html=True), name="web")
 
     return app
 
