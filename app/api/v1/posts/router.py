@@ -1,3 +1,6 @@
+import asyncio
+import threading
+import time
 from fastapi import APIRouter, Query, Depends, Path, status, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -100,6 +103,30 @@ def get_post_by_slug(
     if include_content:
         return PostPublic.model_validate(post)
     return PostSummary.model_validate(post)
+
+
+# ---------------------------------------------------------------------------
+# Módulo 7: demostración sync vs async (endpoints de prueba)
+# ---------------------------------------------------------------------------
+@router.get("/sync", tags=["demo sync/async"])
+def sync_endpoint(t: float = Query(8, ge=0, le=15, description="Segundos de espera")):
+    print("SYNC thread:", threading.current_thread().name)
+
+    # Esto simula un bloqueo severo (DB o Red). Como es `def`,
+    # FastAPI lo manda a un hilo del threadpool.
+    time.sleep(t)
+
+    return {"message": "Función síncrona terminó", "sleep": t}
+
+
+@router.get("/async", tags=["demo sync/async"])
+async def async_endpoint(t: float = Query(8, ge=0, le=15, description="Segundos de espera")):
+    print("ASYNC thread:", threading.current_thread().name)
+
+    # Suelta el control al Event Loop mientras espera
+    await asyncio.sleep(t)
+
+    return {"message": "Función asíncrona terminó", "sleep": t}
 
 
 @router.get("/secure")
